@@ -1,6 +1,6 @@
 # Recorrido esencial del TPI. Ejecutar en orden, con el seed ya cargado.
 # REST Client de VSCode debe conservar cookies. No usar Authorization manual.
-# Cambiar marca al repetir; si el administrador usa otra contraseña, reemplazar Admin1234!.
+# Cambiar marca al repetir; si el administrador usa otra contraseña, reemplazar la contraseña.
 # No requiere base vacía, pero los clientes con esta marca deben ser nuevos.
 # Los títulos indican código esperado y, cuando corresponde, el valor a comprobar.
 # Swagger y ReDoc se consultan en /docs y /redoc; no se agregan peticiones repetidas aquí.
