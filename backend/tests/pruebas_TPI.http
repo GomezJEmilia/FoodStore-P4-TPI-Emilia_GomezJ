@@ -1,0 +1,372 @@
+# Recorrido esencial del TPI. Ejecutar en orden, con el seed ya cargado.
+# REST Client de VSCode debe conservar cookies. No usar Authorization manual.
+# Cambiar marca al repetir; si el administrador usa otra contraseña, reemplazar Admin1234!.
+# No requiere base vacía, pero los clientes con esta marca deben ser nuevos.
+# Los títulos indican código esperado y, cuando corresponde, el valor a comprobar.
+# Swagger y ReDoc se consultan en /docs y /redoc; no se agregan peticiones repetidas aquí.
+@baseUrl = http://localhost:8000/api/v1
+@marca = tpi_001
+
+### 01. Comenzar sin sesión — 200
+POST {{baseUrl}}/auth/logout
+
+### 02. Categorías públicas — 200
+GET {{baseUrl}}/categorias
+
+### 03. Productos públicos paginados — 200
+GET {{baseUrl}}/productos?skip=0&limit=20
+
+### 04. Perfil sin sesión — 401
+GET {{baseUrl}}/auth/me
+
+### 05. Registro público: role=user, sin hash — 201
+# @name cliente
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "username": "cliente_{{marca}}",
+  "full_name": "Cliente de prueba",
+  "email": "cliente_{{marca}}@example.com",
+  "password": "Password123!"
+}
+
+### 06. Registro duplicado — 409
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "username": "cliente_{{marca}}",
+  "full_name": "Cliente de prueba",
+  "email": "cliente_{{marca}}@example.com",
+  "password": "Password123!"
+}
+
+### 07. Credenciales incorrectas — 401
+POST {{baseUrl}}/auth/token
+Content-Type: application/x-www-form-urlencoded
+
+username=cliente_{{marca}}&password=Incorrecta123!
+
+### 08. Ingresar como cliente — 200
+POST {{baseUrl}}/auth/token
+Content-Type: application/x-www-form-urlencoded
+
+username=cliente_{{marca}}&password=Password123!
+
+### 09. Perfil del cliente: usuario público — 200
+GET {{baseUrl}}/auth/me
+
+### 10. Cliente no puede escribir catálogo — 403
+POST {{baseUrl}}/categorias
+Content-Type: application/json
+
+{
+  "nombre": "No autorizada"
+}
+
+### 11. Ingresar como administrador — 200
+POST {{baseUrl}}/auth/token
+Content-Type: application/x-www-form-urlencoded
+
+username=admin&password=Admin1234!
+
+### 12. Perfil admin e ID para autodesactivación — 200
+# @name adminActual
+GET {{baseUrl}}/auth/me
+
+### 13. Administración de usuarios — 200
+GET {{baseUrl}}/admin/usuarios
+
+### 14. Autodesactivación rechazada — 400
+POST {{baseUrl}}/admin/usuarios/{{adminActual.response.body.$.id}}/desactivar
+
+### 15. Crear categoría — 201
+# @name categoria
+POST {{baseUrl}}/categorias
+Content-Type: application/json
+
+{
+  "nombre": "Catálogo {{marca}}",
+  "descripcion": "Prueba"
+}
+
+### 16. Nombre de categoría duplicado — 409
+POST {{baseUrl}}/categorias
+Content-Type: application/json
+
+{
+  "nombre": "  catálogo {{marca}}  "
+}
+
+### 17. Edición parcial de categoría — 200
+PUT {{baseUrl}}/categorias/{{categoria.response.body.$.id}}
+Content-Type: application/json
+
+{
+  "descripcion": "Descripción actualizada"
+}
+
+### 18. Detalle de categoría conserva nombre — 200
+GET {{baseUrl}}/categorias/{{categoria.response.body.$.id}}
+
+### 19. Crear producto — 201
+# @name producto
+POST {{baseUrl}}/productos
+Content-Type: application/json
+
+{
+  "nombre": "Producto {{marca}}",
+  "precio_base": 100,
+  "stock": 4,
+  "categoria_id": {{categoria.response.body.$.id}}
+}
+
+### 20. Buscar y filtrar: total=1 e items con el producto — 200
+GET {{baseUrl}}/productos?search={{marca}}&categoria_id={{categoria.response.body.$.id}}&skip=0&limit=1
+
+### 21. Detalle del producto — 200
+GET {{baseUrl}}/productos/{{producto.response.body.$.id}}
+
+### 22. Edición parcial de producto — 200
+PUT {{baseUrl}}/productos/{{producto.response.body.$.id}}
+Content-Type: application/json
+
+{
+  "descripcion": "Producto de prueba"
+}
+
+### 23. Cambio de stock y disponibilidad — 200
+PATCH {{baseUrl}}/productos/{{producto.response.body.$.id}}/stock
+Content-Type: application/json
+
+{
+  "stock": 4,
+  "disponible": true
+}
+
+### 24. Ingresar como cliente — 200
+POST {{baseUrl}}/auth/token
+Content-Type: application/x-www-form-urlencoded
+
+username=cliente_{{marca}}&password=Password123!
+
+### 25. Pedido inválido: primero producto válido y luego inexistente; rollback — 404
+POST {{baseUrl}}/pedidos
+Content-Type: application/json
+
+{
+  "items": [
+    {
+      "producto_id": {{producto.response.body.$.id}},
+      "cantidad": 1
+    },
+    {
+      "producto_id": 2147483647,
+      "cantidad": 1
+    }
+  ],
+  "forma_pago": "EFECTIVO",
+  "direccion_entrega": "Calle Mendoza 123",
+  "notas": "Prueba del TPI"
+}
+
+### 26. Rollback: stock sigue en 4 — 200
+GET {{baseUrl}}/productos/{{producto.response.body.$.id}}
+
+### 27. Rollback: el cliente no tiene pedidos, total=0 — 200
+GET {{baseUrl}}/pedidos?skip=0&limit=20
+
+### 28. Stock insuficiente — 400
+POST {{baseUrl}}/pedidos
+Content-Type: application/json
+
+{
+  "items": [
+    {
+      "producto_id": {{producto.response.body.$.id}},
+      "cantidad": 5
+    }
+  ],
+  "forma_pago": "EFECTIVO",
+  "direccion_entrega": "Calle Mendoza 123",
+  "notas": "Prueba del TPI"
+}
+
+### 29. Producto repetido — 400
+POST {{baseUrl}}/pedidos
+Content-Type: application/json
+
+{
+  "items": [
+    {
+      "producto_id": {{producto.response.body.$.id}},
+      "cantidad": 1
+    },
+    {
+      "producto_id": {{producto.response.body.$.id}},
+      "cantidad": 1
+    }
+  ],
+  "forma_pago": "EFECTIVO",
+  "direccion_entrega": "Calle Mendoza 123",
+  "notas": "Prueba del TPI"
+}
+
+### 30. Pedido sin ítems — 422
+POST {{baseUrl}}/pedidos
+Content-Type: application/json
+
+{
+  "items": [],
+  "forma_pago": "EFECTIVO",
+  "direccion_entrega": "Calle Mendoza 123",
+  "notas": "Prueba del TPI"
+}
+
+### 31. Compra válida: total=200 y estado PENDIENTE — 201
+# @name pedidoCancelar
+POST {{baseUrl}}/pedidos
+Content-Type: application/json
+
+{
+  "items": [
+    {
+      "producto_id": {{producto.response.body.$.id}},
+      "cantidad": 2
+    }
+  ],
+  "forma_pago": "EFECTIVO",
+  "direccion_entrega": "Calle Mendoza 123",
+  "notas": "Prueba del TPI"
+}
+
+### 32. Detalle propio con líneas históricas — 200
+GET {{baseUrl}}/pedidos/{{pedidoCancelar.response.body.$.id}}
+
+### 33. Cancelación propia pendiente — 200
+PATCH {{baseUrl}}/pedidos/{{pedidoCancelar.response.body.$.id}}/cancelar
+
+### 34. Cancelación repetida rechazada — 400
+PATCH {{baseUrl}}/pedidos/{{pedidoCancelar.response.body.$.id}}/cancelar
+
+### 35. Stock=4: se restituyó una sola vez — 200
+GET {{baseUrl}}/productos/{{producto.response.body.$.id}}
+
+### 36. Segundo pedido: total=100 — 201
+# @name pedidoEntregar
+POST {{baseUrl}}/pedidos
+Content-Type: application/json
+
+{
+  "items": [
+    {
+      "producto_id": {{producto.response.body.$.id}},
+      "cantidad": 1
+    }
+  ],
+  "forma_pago": "EFECTIVO",
+  "direccion_entrega": "Calle Mendoza 123",
+  "notas": "Prueba del TPI"
+}
+
+### 37. Registrar otro cliente para comprobar propiedad — 201
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "username": "otro_{{marca}}",
+  "full_name": "Otro cliente",
+  "email": "otro_{{marca}}@example.com",
+  "password": "Password123!"
+}
+
+### 38. Ingresar como cliente — 200
+POST {{baseUrl}}/auth/token
+Content-Type: application/x-www-form-urlencoded
+
+username=otro_{{marca}}&password=Password123!
+
+### 39. Pedido ajeno rechazado — 403
+GET {{baseUrl}}/pedidos/{{pedidoEntregar.response.body.$.id}}
+
+### 40. Ingresar como administrador — 200
+POST {{baseUrl}}/auth/token
+Content-Type: application/x-www-form-urlencoded
+
+username=admin&password=Admin1234!
+
+### 41. Transición inválida: pendiente no puede entregarse directamente — 400
+PATCH {{baseUrl}}/pedidos/{{pedidoEntregar.response.body.$.id}}/estado
+Content-Type: application/json
+
+{
+  "estado": "ENTREGADO"
+}
+
+### 42. Preparar pedido — 200
+PATCH {{baseUrl}}/pedidos/{{pedidoEntregar.response.body.$.id}}/estado
+Content-Type: application/json
+
+{
+  "estado": "EN_PREPARACION"
+}
+
+### 43. Entregar pedido — 200
+PATCH {{baseUrl}}/pedidos/{{pedidoEntregar.response.body.$.id}}/estado
+Content-Type: application/json
+
+{
+  "estado": "ENTREGADO"
+}
+
+### 44. Modificar catálogo después de comprar — 200
+PUT {{baseUrl}}/productos/{{producto.response.body.$.id}}
+Content-Type: application/json
+
+{
+  "nombre": "Producto modificado {{marca}}",
+  "precio_base": 250
+}
+
+### 45. Histórico: nombre original, precio=100 y total=100 — 200
+GET {{baseUrl}}/pedidos/{{pedidoEntregar.response.body.$.id}}
+
+### 46. Resumen: incluye el pedido entregado de 100 — 200
+GET {{baseUrl}}/pedidos/resumen
+
+### 47. Baja lógica de categoría: conserva productos — 204
+DELETE {{baseUrl}}/categorias/{{categoria.response.body.$.id}}
+
+### 48. Producto visible con categoría inactiva — 200
+GET {{baseUrl}}/productos/{{producto.response.body.$.id}}
+
+### 49. Baja lógica del producto — 204
+DELETE {{baseUrl}}/productos/{{producto.response.body.$.id}}
+
+### 50. Producto dado de baja no se encuentra — 404
+GET {{baseUrl}}/productos/{{producto.response.body.$.id}}
+
+### 51. Desactivar al cliente — 200
+POST {{baseUrl}}/admin/usuarios/{{cliente.response.body.$.id}}/desactivar
+
+### 52. Login de cuenta desactivada — 400
+POST {{baseUrl}}/auth/token
+Content-Type: application/x-www-form-urlencoded
+
+username=cliente_{{marca}}&password=Password123!
+
+### 53. Ingresar como administrador — 200
+POST {{baseUrl}}/auth/token
+Content-Type: application/x-www-form-urlencoded
+
+username=admin&password=Admin1234!
+
+### 54. Reactivar al cliente — 200
+POST {{baseUrl}}/admin/usuarios/{{cliente.response.body.$.id}}/activar
+
+### 55. Cerrar sesión — 200
+POST {{baseUrl}}/auth/logout
+
+### 56. Perfil después del logout — 401
+GET {{baseUrl}}/auth/me

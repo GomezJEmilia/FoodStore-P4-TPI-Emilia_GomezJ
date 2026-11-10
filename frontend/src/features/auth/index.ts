@@ -1,0 +1,5 @@
+export { useAuth } from './hooks/useAuth'
+export { registrarUsuario } from './api/auth'
+export type { Usuario, Rol, Credenciales, RegistroData } from './types/auth'
+export { LoginPage } from './pages/LoginPage'
+export { RegistroPage } from './pages/RegistroPage'

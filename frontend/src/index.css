@@ -1,0 +1,52 @@
+@import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+
+@layer base {
+  :root {
+    color-scheme: light;
+    --fondo: #f8fafc; --superficie: #ffffff; --texto: #0f172a; --muted: #475569;
+    --borde: #cbd5e1; --primario: #1d4ed8; --primario-hover: #1e40af;
+    --error: #b91c1c; --error-fondo: #fef2f2; --skeleton: #e2e8f0;
+  }
+  .dark {
+    color-scheme: dark;
+    --fondo: #020617; --superficie: #0f172a; --texto: #f1f5f9; --muted: #cbd5e1;
+    --borde: #475569; --primario: #2563eb; --primario-hover: #1d4ed8;
+    --error: #fca5a5; --error-fondo: #450a0a; --skeleton: #334155;
+  }
+  body { margin: 0; min-width: 320px; min-height: 100vh; background: var(--fondo); color: var(--texto); }
+  #root { min-height: 100vh; }
+  button, input, select, textarea { font: inherit; }
+  :focus-visible { outline: 3px solid #60a5fa; outline-offset: 3px; }
+  button:not(:disabled), a { cursor: pointer; }
+}
+
+@layer components {
+  .superficie { background: var(--superficie); color: var(--texto); border-color: var(--borde); }
+  .border-tema { border-color: var(--borde); }
+  .texto-secundario { color: var(--muted); }
+  .texto-error { color: var(--error); }
+  .boton { @apply inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50; }
+  .boton-primario { background: var(--primario); color: white; }
+  .boton-primario:hover:not(:disabled) { background: var(--primario-hover); }
+  .boton-secundario { border: 1px solid var(--borde); background: var(--superficie); color: var(--texto); }
+  .boton-secundario:hover:not(:disabled) { background: var(--skeleton); }
+  .boton-peligro { background: #b91c1c; color: white; }
+  .boton-peligro:hover:not(:disabled) { background: #991b1b; }
+  .campo { @apply w-full rounded-lg border px-3 py-2 disabled:cursor-not-allowed disabled:opacity-50; border-color: var(--borde); color: var(--texto); background: var(--superficie); }
+  .campo::placeholder { color: var(--muted); opacity: 0.8; }
+  .campo[aria-invalid="true"] { border-color: var(--error); }
+  .mensaje-error { color: var(--error); background: var(--error-fondo); border-color: var(--error); }
+  .esqueleto { background: var(--skeleton); }
+  .enlace-nav { @apply inline-flex rounded-lg px-3 py-2 text-sm font-semibold; color: var(--muted); }
+  .enlace-nav:hover { background: var(--skeleton); color: var(--texto); }
+  .enlace-activo { background: var(--primario); color: white; }
+  .enlace-activo:hover { background: var(--primario-hover); color: white; }
+  .modal-fondo { @apply fixed inset-0 z-50 flex items-center justify-center overflow-y-auto p-4; background: rgb(2 6 23 / 70%); }
+  .insignia { @apply inline-flex rounded-full px-3 py-1 text-xs font-bold; }
+  .estado-pendiente { @apply bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200; }
+  .estado-en_preparacion { @apply bg-blue-100 text-blue-900 dark:bg-blue-950 dark:text-blue-200; }
+  .estado-entregado { @apply bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-200; }
+  .estado-cancelado { @apply bg-red-100 text-red-900 dark:bg-red-950 dark:text-red-200; }
+  .salto-contenido { @apply sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-white focus:p-3 focus:text-slate-900; }
+}
