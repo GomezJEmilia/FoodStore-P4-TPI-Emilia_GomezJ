@@ -484,5 +484,5 @@ Las propuestas se contrastaron con la consigna y se sometieron a revisiones, com
 
 ## Enlaces
 
-- Repositorio público: **pendiente de completar**.
-- Video de demostración: **pendiente de completar**.
+- [Repositorio público](https://github.com/GomezJEmilia/FoodStore-P4-TPI-Emilia_GomezJ.git)
+- [Video de demostración](https://drive.google.com/file/d/1-DNi4am2HtRjpF4Y52R90nblJZwdnXdV/view?usp=sharing)
